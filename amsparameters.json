@@ -1,0 +1,53 @@
+{
+  "CloudFormationTemplateS3Endpoint": "https://bucket.s3.amazonaws.com/3-tier-cfn-ingest.json?AWSAccessKeyId=xxx",
+  "Description": "please ignore testing",
+  "Name": "testing",
+  "Tags": [
+    {
+      "Key": "Application",
+      "Value": "3 Tier Test App"
+    },
+    {
+      "Key": "Owner",
+      "Value": "First Last"
+    },
+    {
+      "Key": "Contact",
+      "Value": "first.last@origin.com.au"
+    },
+    {
+      "Key": "Project",
+      "Value": "AMS Testing"
+    },
+    {
+      "Key": "Environment",
+      "Value": "Non Prod"
+    }
+  ],
+  "Parameters": [
+    {
+      "Name": "IAMEC2InstanceProfile",
+      "Value": "xxx"
+    },
+    {
+      "Name": "MultiAZDatabase",
+      "Value": "false"
+    },
+    {
+      "Name": "PrivSubnets",
+      "Value": "subnet-xxx,subnet-xxx"
+    },
+    {
+      "Name": "PubSubnets",
+      "Value": "subnet-xxx,subnet-xxx"
+    },
+    {
+      "Name": "VpcId",
+      "Value": "vpc-xxx"
+    },
+    {
+      "Name": "WebServerCapacity",
+      "Value": "1"
+    }
+  ]
+}
