@@ -6,7 +6,7 @@
   "Parameters": {
     "VpcId": {
       "Type": "AWS::EC2::VPC::Id",
-      "Description": "VpcId of your existing Virtual Private Cloud (VPC)",
+      "Description": "VpcId of your existing Virtual Private Cloud (VPC) - CONTINO TEST",
       "ConstraintDescription": "must be the VPC Id of an existing Virtual Private Cloud."
     },
 
