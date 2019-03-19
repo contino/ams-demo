@@ -1,0 +1,236 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+
+  "Description": "AWS CloudFormation Sample Template LAMP_Multi_AZ: Create a highly available, scalable LAMP stack with an Amazon RDS database instance for the backend data store. This template demonstrates using the AWS CloudFormation bootstrap scripts to install the packages and files necessary to deploy the Apache web server and PHP at instance launch time. **WARNING** This template creates one or more Amazon EC2 instances, an Application Load Balancer and an Amazon RDS DB instance. You will be billed for the AWS resources used if you create a stack from this template.",
+
+  "Parameters": {
+    "VpcId": {
+      "Type": "AWS::EC2::VPC::Id",
+      "Description": "VpcId of your existing Virtual Private Cloud (VPC)",
+      "ConstraintDescription": "must be the VPC Id of an existing Virtual Private Cloud."
+    },
+
+    "PubSubnets": {
+      "Type": "List<AWS::EC2::Subnet::Id>",
+      "Description": "The list of Public SubnetIds in your Virtual Private Cloud (VPC)",
+      "ConstraintDescription": "must be a list of at least two existing subnets associated with at least two different availability zones. They should be residing in the selected Virtual Private Cloud."
+    },
+
+    "PrivSubnets": {
+      "Type": "List<AWS::EC2::Subnet::Id>",
+      "Description": "The list of Private SubnetIds in your Virtual Private Cloud (VPC)",
+      "ConstraintDescription": "must be a list of at least two existing subnets associated with at least two different availability zones. They should be residing in the selected Virtual Private Cloud."
+    },
+
+    "DBName": {
+      "Default": "myDatabase",
+      "Description": "MySQL database name",
+      "Type": "String",
+      "MinLength": "1",
+      "MaxLength": "64",
+      "AllowedPattern": "[a-zA-Z][a-zA-Z0-9]*",
+      "ConstraintDescription": "must begin with a letter and contain only alphanumeric characters."
+    },
+
+    "DBAllocatedStorage": {
+      "Default": "5",
+      "Description": "The size of the database (Gb)",
+      "Type": "Number",
+      "MinValue": "5",
+      "MaxValue": "1024",
+      "ConstraintDescription": "must be between 5 and 1024Gb."
+    },
+
+    "DBInstanceClass": {
+      "Description": "The database instance type",
+      "Type": "String",
+      "Default": "db.t2.small",
+      "AllowedValues": [ "db.t2.small", "db.t2.medium" ],
+      "ConstraintDescription": "must select a valid database instance type."
+    },
+
+    "MultiAZDatabase": {
+      "Default": "true",
+      "Description": "Create a Multi-AZ MySQL Amazon RDS database instance",
+      "Type": "String",
+      "AllowedValues": [ "true", "false" ],
+      "ConstraintDescription": "must be either true or false."
+    },
+
+    "WebServerCapacity": {
+      "Default": "2",
+      "Description": "The initial number of WebServer instances",
+      "Type": "Number",
+      "MinValue": "1",
+      "MaxValue": "5",
+      "ConstraintDescription": "must be between 1 and 5 EC2 instances."
+    },
+
+    "IAMEC2InstanceProfile": {
+      "Description": "WebServer EC2 IAM instance profile (with read permission to AWS Secrets Manager)",
+      "Type": "String",
+      "Default": "",
+      "AllowedPattern": "^[a-zA-Z0-9-_]*$",
+      "ConstraintDescription": "Must be a valid pre-existing EC2 IAM role aka instance profile."
+    },
+
+    "InstanceType": {
+      "Description": "WebServer EC2 instance type",
+      "Type": "String",
+      "Default": "t2.small",
+      "AllowedValues": [ "t2.small", "t2.medium" ],
+      "ConstraintDescription": "must be a valid EC2 instance type."
+    }
+
+  },
+
+  "Mappings": {
+    "AWSInstanceType2Arch": {
+      "t2.small": { "Arch": "HVM64" },
+      "t2.medium": { "Arch": "HVM64" }
+    },
+
+    "AWSRegionArch2AMI": {
+      "ap-southeast-2": {
+        "HVM64": "ami-0e8aaebe46241e626",
+        "HVMG2": "ami-0a9ce9fecc3d1daf8"
+      },
+      "ap-southeast-1": {
+        "HVM64": "ami-0912f71e06545ad88",
+        "HVMG2": "ami-097b15e89dbdcfcf4"
+      }
+    }
+
+  },
+
+  "Resources": {
+
+    "InstanceAppWeb": {
+      "Type": "AWS::EC2::Instance",
+      "Properties": {
+        "BlockDeviceMappings": [
+           {
+              "DeviceName": { "Ref": "InstanceRootVolumeName" },
+              "Ebs": {
+                "DeleteOnTermination": "true",
+                "Iops": {
+                  "Fn::If": [ "IsInstanceIo1RootVolumeType",
+                              { "Ref": "InstanceRootVolumeIops" },
+                              { "Ref" : "AWS::NoValue" }
+                  ]
+                },
+                "VolumeSize": { "Ref": "InstanceRootVolumeSize" },
+                "VolumeType": { "Ref": "InstanceRootVolumeType" }
+              }
+           }
+        ],
+        "EbsOptimized": { "Ref": "InstanceEBSOptimized" },
+        "IamInstanceProfile": { "Ref": "InstanceProfile" },
+        "ImageId": { "Ref": "InstanceAmiId" },
+        "InstanceInitiatedShutdownBehavior": "stop",
+        "InstanceType": { "Ref": "InstanceType" },
+        "Monitoring": { "Ref": "InstanceDetailedMonitoring" },
+        "PrivateIpAddress": {
+            "Fn::If" : [
+              "HasPrivateStaticIp",
+              { "Ref": "InstancePrivateStaticIp" },
+              { "Ref": "AWS::NoValue" }
+            ]
+        },
+        "SecurityGroupIds" : { "Ref": "SecurityGroups" },
+        "SubnetId": { "Ref": "InstanceSubnetId" },
+        "Tenancy": "default",
+        "UserData" : {
+          "Fn::If" : [
+            "HasUserData",
+            { "Fn::Base64" : {"Ref" : "InstanceUserData"} },
+            { "Ref": "AWS::NoValue" }
+          ]
+        }
+      },
+      "CreationPolicy": {
+        "ResourceSignal": {
+          "Count": 1,
+          "Timeout": "PT12H"
+        }
+      }
+    },
+
+
+    "xxServerSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "Enable HTTP access via port 80 locked down to the ELB and SSH access",
+        "SecurityGroupIngress": [
+          {
+            "IpProtocol": "tcp",
+            "FromPort": "80",
+            "ToPort": "80",
+            "SourceSecurityGroupId": { "Ref": "ALBSecurityGroup" }
+          }
+        ],
+        "VpcId": { "Ref": "VpcId" }
+      }
+    },
+
+    "DBEC2SecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "Open database for access",
+        "SecurityGroupIngress": [
+          {
+            "IpProtocol": "tcp",
+            "FromPort": "3306",
+            "ToPort": "3306",
+            "SourceSecurityGroupId": { "Ref": "WebServerSecurityGroup" }
+          }
+        ],
+        "VpcId": { "Ref": "VpcId" }
+      }
+    },
+
+    "myDBSubnetGroup": {
+      "Type": "AWS::RDS::DBSubnetGroup",
+      "Properties": {
+        "DBSubnetGroupDescription": "description",
+        "SubnetIds": { "Ref": "PrivSubnets" },
+        "Tags": [
+          {
+            "Key": "String",
+            "Value": "String"
+          }
+        ]
+      }
+    },
+
+    "MySQLDatabase": {
+      "Type": "AWS::RDS::DBInstance",
+      "Properties": {
+        "Engine": "MySQL",
+        "DBName": { "Ref": "DBName" },
+        "MultiAZ": { "Ref": "MultiAZDatabase" },
+        "MasterUsername": "{{resolve:secretsmanager:ams-shared/stage-otdb-new:SecretString:Username}}",
+        "MasterUserPassword": "{{resolve:secretsmanager:ams-shared/stage-otdb-new:SecretString:Password}}",
+        "DBInstanceClass": { "Ref": "DBInstanceClass" },
+        "AllocatedStorage": { "Ref": "DBAllocatedStorage" },
+        "DBSubnetGroupName": { "Ref": "myDBSubnetGroup" },
+        "VPCSecurityGroups": [ { "Fn::GetAtt": [ "DBEC2SecurityGroup", "GroupId" ] } ]
+      }
+    }
+  },
+
+  "Outputs": {
+    "WebsiteURL": {
+      "Description": "URL for newly created LAMP stack",
+      "Value": {
+        "Fn::Join": [
+          "",
+          [
+            "http://",
+            { "Fn::GetAtt": [ "ApplicationLoadBalancer", "DNSName" ] }
+          ]
+        ]
+      }
+    }
+  }
+}
