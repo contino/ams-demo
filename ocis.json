@@ -10,6 +10,12 @@
       "ConstraintDescription": "The VPC Id of an existing Virtual Private Cloud."
     },
 
+    "PrivSubnet": {
+      "Type": "String<AWS::EC2::Subnet::Id>",
+      "Description": "The string of the Private SubnetId in your Virtual Private Cloud (VPC)",
+      "ConstraintDescription": "Subnet Id"
+    },
+
     "PrivSubnets": {
       "Type": "List<AWS::EC2::Subnet::Id>",
       "Description": "The list of Private SubnetIds in your Virtual Private Cloud (VPC)",
@@ -50,10 +56,10 @@
       "ConstraintDescription": "must be either true or false."
     },
 
-    "AppWebInstanceProfile": {
+    "AppWebIAMEC2InstanceProfile": {
       "Description": "WebServer EC2 IAM instance profile (with read permission to AWS Secrets Manager)",
       "Type": "String",
-      "Default": "customer_origin_secrets_manager_instance_profile",
+      "Default": "",
       "AllowedPattern": "^[a-zA-Z0-9-_]*$",
       "ConstraintDescription": "Must be a valid pre-existing EC2 IAM role aka instance profile."
     },
@@ -65,15 +71,15 @@
       "ConstraintDescription": "must be a valid EC2 instance type."
     },
 
-    "ReportingInstanceProfile": {
+    "ReportingIAMEC2InstanceProfile": {
       "Description": "Reporting Server EC2 IAM instance profile (with read permission to AWS Secrets Manager)",
       "Type": "String",
-      "Default": "customer_origin_secrets_manager_instance_profile",
+      "Default": "",
       "AllowedPattern": "^[a-zA-Z0-9-_]*$",
       "ConstraintDescription": "Must be a valid pre-existing EC2 IAM role aka instance profile."
     },
 
-    "ReportingInstanceType": {
+    "ReportinInstanceType": {
       "Description": "Reporting Server EC2 instance type",
       "Type": "String",
       "Default": "t3.xlarge",
@@ -84,7 +90,7 @@
 
   "Resources": {
 
-    "AppWebSecurityGroup": {
+    "EC2ServersSecurityGroup": {
       "Type": "AWS::EC2::SecurityGroup",
       "Properties": {
         "GroupDescription": "Enable HTTP access via port 80",
@@ -92,12 +98,14 @@
           {
             "IpProtocol": "tcp",
             "FromPort": "80",
-            "ToPort": "80"
+            "ToPort": "80",
+            "CidrIp" : "10.0.0.0/16"
           },
           {
             "IpProtocol": "tcp",
             "FromPort": "443",
-            "ToPort": "443"
+            "ToPort": "443",
+            "CidrIp" : "10.0.0.0/16"
           }
         ],
         "VpcId": { "Ref": "VpcId" }
@@ -114,13 +122,13 @@
                 "VolumeSize": "100"
               }
            },
-           {
+                      {
               "DeviceName": "app",
               "Ebs": {
                 "VolumeSize": "50"
               }
            },
-           {
+                      {
               "DeviceName": "data",
               "Ebs": {
                 "VolumeSize": "50"
@@ -130,28 +138,8 @@
         "ImageId": "ami-00f409158af899a3e",
         "IamInstanceProfile": { "Ref": "AppWebInstanceProfile" },
         "InstanceType": { "Ref": "AppWebInstanceType" },
-        "SecurityGroups" : { "Ref": "AppWebSecurityGroup" },
-        "SubnetId": { "Ref": "PrivSubnets" }
-      }
-    },
-
-    "ReportingSecurityGroup": {
-      "Type": "AWS::EC2::SecurityGroup",
-      "Properties": {
-        "GroupDescription": "Enable HTTP access via port 80",
-        "SecurityGroupIngress": [
-          {
-            "IpProtocol": "tcp",
-            "FromPort": "80",
-            "ToPort": "80"
-          },
-          {
-            "IpProtocol": "tcp",
-            "FromPort": "443",
-            "ToPort": "443"
-          }
-        ],
-        "VpcId": { "Ref": "VpcId" }
+        "SecurityGroups" : { "Ref": "EC2ServersSecurityGroup" },
+        "SubnetId": { "Ref": "PrivSubnet" }
       }
     },
 
@@ -181,12 +169,12 @@
         "ImageId": "ami-00f409158af899a3e",
         "IamInstanceProfile": { "Ref": "ReportingInstanceProfile" },
         "InstanceType": { "Ref": "ReportingInstanceType" },
-        "SecurityGroups" : { "Ref": "ReportingSecurityGroup" },
+        "SecurityGroups" : { "Ref": "EC2ServersSecurityGroup" },
         "SubnetId": { "Ref": "PrivSubnets" }
       }
     },
-
-    "DBSecurityGroup": {
+    
+    "DBEC2SecurityGroup": {
       "Type": "AWS::EC2::SecurityGroup",
       "Properties": {
         "GroupDescription": "Open database for access",
@@ -195,14 +183,14 @@
             "IpProtocol": "tcp",
             "FromPort": "1521",
             "ToPort": "1521",
-            "SourceSecurityGroupId": { "Ref": "AppWebSecurityGroup" }
+            "SourceSecurityGroupId": { "Ref": "EC2ServersSecurityGroup" }
           }
         ],
         "VpcId": { "Ref": "VpcId" }
       }
     },
 
-    "DBSubnetGroup": {
+    "myDBSubnetGroup": {
       "Type": "AWS::RDS::DBSubnetGroup",
       "Properties": {
         "DBSubnetGroupDescription": "description",
@@ -213,7 +201,7 @@
     "OracleDB": {
       "Type": "AWS::RDS::DBInstance",
       "Properties": {
-        "DBName": "oracle-db",
+        "DBName": { "Ref": "DBName" },
         "DBInstanceIdentifier": "oracle-db",
         "Engine": "oracle-ee",
         "EngineVersion": "12.1.0.2.v7",
@@ -223,8 +211,8 @@
         "MultiAZ": { "Ref": "MultiAZDatabase" },
         "DBInstanceClass": { "Ref": "DBInstanceClass" },
         "AllocatedStorage": { "Ref": "DBAllocatedStorage" },
-        "DBSubnetGroupName": { "Ref": "DBSubnetGroup" },
-        "VPCSecurityGroups": [ { "Fn::GetAtt": [ "DBSecurityGroup", "GroupId" ] } ]
+        "DBSubnetGroupName": { "Ref": "myDBSubnetGroup" },
+        "VPCSecurityGroups": [ { "Fn::GetAtt": [ "DBEC2SecurityGroup", "GroupId" ] } ]
       }
     }
   }
