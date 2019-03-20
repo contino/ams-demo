@@ -1,0 +1,37 @@
+{
+  "CloudFormationTemplateS3Endpoint": "{{ cf_templated_presign.stdout }}",
+  "Description": "OCIS Application Stack - Contains 1 x Web/App server, 1 x Reporting Server, and a RDS database.",
+  "Name": "OCIS Parameters",
+  "Tags": [
+    {
+      "Key": "Application",
+      "Value": "OCIS - Remo Test"
+    },
+    {
+      "Key": "Owner",
+      "Value": "Remo Naidoo"
+    },
+    {
+      "Key": "Contact",
+      "Value": "remo.naidoo@origin.com.au"
+    },
+    {
+      "Key": "Project",
+      "Value": "Cloud Migration Project"
+    },
+    {
+      "Key": "Environment",
+      "Value": "Non Prod"
+    }
+  ],
+  "Parameters": [
+    {
+      "Name": "VpcID",
+      "Value": "vpc-78e76e1f"
+    },
+    {
+      "Name": "PrivSubnets",
+      "Value": "subnet-5b047812,subnet-c4d192a3"
+    }
+  ]
+}

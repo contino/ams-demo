@@ -1,0 +1,75 @@
+---
+- hosts: localhost
+  tasks:
+
+  - name: install AMS CLI
+    shell: |
+      cd ./lib/ams && ./AWSManagedServices_InstallCLI.sh && cd ../../
+
+  - name: create bucket to store templates
+    shell: |
+      aws s3 mb s3://contino-green-team --profile origin-anp
+    ignore_errors: yes
+
+  - name: validate template locally
+    shell: |
+      aws cloudformation validate-template --template-body file://ocis.json
+    tags:
+      - validate
+
+  - name: create CF
+    shell: |
+      aws cloudformation create-stack \
+      --stack-name ocis-test-stack \
+      --template-body file://ocis.json \
+      --parameters ParameterKey=VpcId,ParameterValue=vpc-78e76e1f ParameterKey=PrivSubnets,ParameterValue=subnet-5b047812\\,subnet-c4d192a ParameterKey=PrivSubnet,ParameterValue=subnet-5b047812 \
+      --tags Key=Application,Value=OCISTEST Key=Owner,Value=ContinoGreenTeam Key=Contact,Value=andrew.khoury@origin.com.au Key=Project,Value=CloudMigration Key=Environment,Value=NonProd \
+      --profile origin-anp
+    tags:
+      - cf
+
+  - name: Upload template to s3
+    shell: |
+      aws s3 cp ocis.json s3://contino-green-team/ocis.json --profile origin-anp
+    tags:
+      - ams
+
+  - name: Generate pre-signed file
+    shell: |
+      aws s3 presign --expires-in 86400 s3://contino-green-team/ocis.json
+    register: cf_templated_presign    
+    tags:
+      - ams
+
+  - name: generate ocis params file
+    template:
+      src: ocisparameters-template.json
+      dest: ocis-params-GENERATED.json
+    tags:
+      - ams
+
+  - name: create RFC
+    shell: |
+      aws amscm create-rfc \
+      --change-type-id ct-36cn2avfrrj9v --change-type-version "1.0" \
+      --title "TEST ONLY - IGNORE - Contino test cfn ingest v2" \
+      --execution-parameters "file://ocis-params-GENERATED.json" --region us-east-1
+    register: rcf_id
+    tags:
+      - ams
+
+  - name: submit RFC
+    shell: |
+      aws amscm submit-rfc --rfc-id {{ (rcf_id.stdout | from_json).RfcId }} --region us-east-1
+    tags:
+      - ams
+
+  - name: check RFC
+    shell: |
+      aws amscm get-rfc --rfc-id {{ (rcf_id.stdout | from_json).RfcId }} --query "Rfc.{Status:Status.Name,Exec:ExecutionOutput}" --region us-east-1
+    retries: 60
+    delay: 30
+    register: result
+    until: (result.stdout | from_json).Status == "Success"
+    tags:
+      - ams
