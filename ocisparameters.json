@@ -30,6 +30,10 @@
       "Value": "vpc-78e76e1f"
     },
     {
+      "Name": "PrivSubnet",
+      "Value": "subnet-5b047812"
+    },
+    {
       "Name": "PrivSubnets",
       "Value": "subnet-5b047812,subnet-c4d192a3"
     }
