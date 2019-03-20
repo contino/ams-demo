@@ -27,15 +27,19 @@
   "Parameters": [
     {
       "Name": "VpcID",
-      "Value": "vpc-78e76e1f"
+      "Value": "vpc-4f070927"
     },
     {
       "Name": "PrivSubnet",
-      "Value": "subnet-5b047812"
+      "Value": "subnet-00013768"
     },
     {
       "Name": "PrivSubnets",
-      "Value": "subnet-5b047812,subnet-c4d192a3"
+      "Value": "subnet-00013768,subnet-5dbb6c11"
+    },
+    {
+      "Name": "ImageID",
+      "Value": "ami-0a95e6864096336b1"
     }
   ]
 }

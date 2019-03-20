@@ -56,10 +56,10 @@
       "ConstraintDescription": "must be either true or false."
     },
 
-    "AppWebIAMEC2InstanceProfile": {
+    "AppWebInstanceProfile": {
       "Description": "WebServer EC2 IAM instance profile (with read permission to AWS Secrets Manager)",
       "Type": "String",
-      "Default": "",
+      "Default": "customer_origin_secrets_manager_instance_profile",
       "AllowedPattern": "^[a-zA-Z0-9-_]*$",
       "ConstraintDescription": "Must be a valid pre-existing EC2 IAM role aka instance profile."
     },
@@ -71,19 +71,26 @@
       "ConstraintDescription": "must be a valid EC2 instance type."
     },
 
-    "ReportingIAMEC2InstanceProfile": {
+    "ReportingInstanceProfile": {
       "Description": "Reporting Server EC2 IAM instance profile (with read permission to AWS Secrets Manager)",
       "Type": "String",
-      "Default": "",
+      "Default": "customer_origin_secrets_manager_instance_profile",
       "AllowedPattern": "^[a-zA-Z0-9-_]*$",
       "ConstraintDescription": "Must be a valid pre-existing EC2 IAM role aka instance profile."
     },
 
-    "ReportinInstanceType": {
+    "ReportingInstanceType": {
       "Description": "Reporting Server EC2 instance type",
       "Type": "String",
       "Default": "t3.xlarge",
-      "ConstraintDescription": "must be a valid EC2 instance type."
+      "ConstraintDescription": "Must be a valid EC2 instance type."
+    },
+
+    "ImageID": {
+      "Description": "Image ID that will be used for the servers",
+      "Type": "String",
+      "Default": "ami-00f409158af899a3e",
+      "ConstraintDescription": "Must be a valid Origin AMI."
     }
 
   },
@@ -135,7 +142,7 @@
               }
            }
         ],
-        "ImageId": "ami-00f409158af899a3e",
+        "ImageId": { "Ref": "ImageID" },
         "IamInstanceProfile": { "Ref": "AppWebInstanceProfile" },
         "InstanceType": { "Ref": "AppWebInstanceType" },
         "SecurityGroups" : { "Ref": "EC2ServersSecurityGroup" },
@@ -166,15 +173,15 @@
               }
            }
         ],
-        "ImageId": "ami-00f409158af899a3e",
+        "ImageId": { "Ref": "ImageID" },
         "IamInstanceProfile": { "Ref": "ReportingInstanceProfile" },
         "InstanceType": { "Ref": "ReportingInstanceType" },
         "SecurityGroups" : { "Ref": "EC2ServersSecurityGroup" },
-        "SubnetId": { "Ref": "PrivSubnets" }
+        "SubnetId": { "Ref": "PrivSubnet" }
       }
     },
     
-    "DBEC2SecurityGroup": {
+    "DBSecurityGroup": {
       "Type": "AWS::EC2::SecurityGroup",
       "Properties": {
         "GroupDescription": "Open database for access",
@@ -190,10 +197,10 @@
       }
     },
 
-    "myDBSubnetGroup": {
+    "DBSubnetGroup": {
       "Type": "AWS::RDS::DBSubnetGroup",
       "Properties": {
-        "DBSubnetGroupDescription": "description",
+        "DBSubnetGroupDescription": "Private subnet group",
         "SubnetIds": { "Ref": "PrivSubnets" }
       }
     },
@@ -201,8 +208,7 @@
     "OracleDB": {
       "Type": "AWS::RDS::DBInstance",
       "Properties": {
-        "DBName": { "Ref": "DBName" },
-        "DBInstanceIdentifier": "oracle-db",
+        "DBName": "oracle-db-test",
         "Engine": "oracle-ee",
         "EngineVersion": "12.1.0.2.v7",
         "LicenseModel": "bring-your-own-license",
@@ -211,8 +217,8 @@
         "MultiAZ": { "Ref": "MultiAZDatabase" },
         "DBInstanceClass": { "Ref": "DBInstanceClass" },
         "AllocatedStorage": { "Ref": "DBAllocatedStorage" },
-        "DBSubnetGroupName": { "Ref": "myDBSubnetGroup" },
-        "VPCSecurityGroups": [ { "Fn::GetAtt": [ "DBEC2SecurityGroup", "GroupId" ] } ]
+        "DBSubnetGroupName": { "Ref": "DBSubnetGroup" },
+        "VPCSecurityGroups": [ { "Fn::GetAtt": [ "DBSecurityGroup", "GroupId" ] } ]
       }
     }
   }
