@@ -83,7 +83,14 @@
       "Description": "Reporting Server EC2 instance type",
       "Type": "String",
       "Default": "t3.xlarge",
-      "ConstraintDescription": "must be a valid EC2 instance type."
+      "ConstraintDescription": "Must be a valid EC2 instance type."
+    },
+
+    "ImageID": {
+      "Description": "Image ID that will be used for the servers",
+      "Type": "String",
+      "Default": "ami-00f409158af899a3e",
+      "ConstraintDescription": "Must be a valid Origin AMI."
     }
 
   },
@@ -135,7 +142,7 @@
               }
            }
         ],
-        "ImageId": "ami-00f409158af899a3e",
+        "ImageId": { "Ref": "ImageID" },
         "IamInstanceProfile": { "Ref": "AppWebInstanceProfile" },
         "InstanceType": { "Ref": "AppWebInstanceType" },
         "SecurityGroups" : { "Ref": "EC2ServersSecurityGroup" },
@@ -166,7 +173,7 @@
               }
            }
         ],
-        "ImageId": "ami-00f409158af899a3e",
+        "ImageId": { "Ref": "ImageID" },
         "IamInstanceProfile": { "Ref": "ReportingInstanceProfile" },
         "InstanceType": { "Ref": "ReportingInstanceType" },
         "SecurityGroups" : { "Ref": "EC2ServersSecurityGroup" },
