@@ -2,9 +2,11 @@
 
 ## Requirements
 
-You need access to an AWS Account. Currently the hardcoded expectation is that you an AWS profile `origin-anp` on your local computer.
+- An AWS Acconut to store files & do test Deploys
+- An AMS Account to do deploys
+- Docker
 
-You also need access to AMS. You can use a federated login via `docker run --rm -it -v ~/.aws:/root/.aws dtjohnson/aws-azure-login` to configure your local aws config file.
+You can use a federated login via `docker run --rm -it -v ~/.aws:/root/.aws dtjohnson/aws-azure-login` to configure your local aws config file on your host machine.
 
 ## Development Container
 

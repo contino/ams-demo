@@ -15,7 +15,7 @@
 
   - name: create bucket to store templates
     shell: |
-      aws s3 mb s3://contino-green-team --profile origin-anp
+      aws s3 mb s3://{{ s3_bucket }} --profile {{ aws_profile }}
     ignore_errors: yes
     tags:
       - bucket
@@ -26,6 +26,27 @@
     tags:
       - validate
 
+  - name: create a stack, pass in the template via an URL
+    cloudformation:
+      stack_name: "ocis-test-stack-test"
+      state: present
+      region: ap-southeast-2
+      disable_rollback: fasle
+      template: https://ocis.json
+      template_parameters:
+        VpcId: vpc-78e76e1f
+        PrivSubnets: "subnet-5b047812,subnet-c4d192a"
+        PrivSubnet: subnet-5b047812
+        ClusterSize: 3
+      tags:
+        Application: OCISTEST
+        Owner: ContinoGreenTeam
+        Contact: andrew.khoury@origin.com.au
+        Project: CloudMigration
+        Environment: NonProd
+    tags:
+      - cf
+
   - name: create CF
     shell: |
       aws cloudformation create-stack \
@@ -33,19 +54,19 @@
       --template-body file://ocis.json \
       --parameters ParameterKey=VpcId,ParameterValue=vpc-78e76e1f ParameterKey=PrivSubnets,ParameterValue=subnet-5b047812\\,subnet-c4d192a ParameterKey=PrivSubnet,ParameterValue=subnet-5b047812 \
       --tags Key=Application,Value=OCISTEST Key=Owner,Value=ContinoGreenTeam Key=Contact,Value=andrew.khoury@origin.com.au Key=Project,Value=CloudMigration Key=Environment,Value=NonProd \
-      --profile origin-anp
+      --profile {{ aws_profile }}
     tags:
       - cf
       
   - name: Upload template to s3
     shell: |
-      aws s3 cp ocis.json s3://contino-green-team/ocis.json --profile origin-anp
+      aws s3 cp ocis.json s3://{{ s3_bucket }}/ocis.json --profile {{ aws_profile }}
     tags:
       - ams
 
   - name: Generate pre-signed file
     shell: |
-      aws s3 presign --expires-in 86400 s3://contino-green-team/ocis.json
+      aws s3 presign --expires-in 86400 s3://{{ s3_bucket }}/ocis.json
     register: cf_templated_presign    
     tags:
       - ams

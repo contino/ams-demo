@@ -1,3 +1,5 @@
+aws_profile: origin-anp
+s3_bucket:   contino-green-team
 
 Description: OCIS Application Stack - Contains 1 x Web/App server, 1 x Reporting Server, and a RDS database.
 Name:        OCIS Parameters
