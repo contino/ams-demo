@@ -50,10 +50,10 @@
       "ConstraintDescription": "must be either true or false."
     },
 
-    "AppWebIAMEC2InstanceProfile": {
+    "AppWebInstanceProfile": {
       "Description": "WebServer EC2 IAM instance profile (with read permission to AWS Secrets Manager)",
       "Type": "String",
-      "Default": "",
+      "Default": "customer_origin_secrets_manager_instance_profile",
       "AllowedPattern": "^[a-zA-Z0-9-_]*$",
       "ConstraintDescription": "Must be a valid pre-existing EC2 IAM role aka instance profile."
     },
@@ -65,15 +65,15 @@
       "ConstraintDescription": "must be a valid EC2 instance type."
     },
 
-    "ReportingIAMEC2InstanceProfile": {
+    "ReportingInstanceProfile": {
       "Description": "Reporting Server EC2 IAM instance profile (with read permission to AWS Secrets Manager)",
       "Type": "String",
-      "Default": "",
+      "Default": "customer_origin_secrets_manager_instance_profile",
       "AllowedPattern": "^[a-zA-Z0-9-_]*$",
       "ConstraintDescription": "Must be a valid pre-existing EC2 IAM role aka instance profile."
     },
 
-    "ReportinInstanceType": {
+    "ReportingInstanceType": {
       "Description": "Reporting Server EC2 instance type",
       "Type": "String",
       "Default": "t3.xlarge",
@@ -114,13 +114,13 @@
                 "VolumeSize": "100"
               }
            },
-                      {
+           {
               "DeviceName": "app",
               "Ebs": {
                 "VolumeSize": "50"
               }
            },
-                      {
+           {
               "DeviceName": "data",
               "Ebs": {
                 "VolumeSize": "50"
@@ -186,7 +186,7 @@
       }
     },
 
-    "DBEC2SecurityGroup": {
+    "DBSecurityGroup": {
       "Type": "AWS::EC2::SecurityGroup",
       "Properties": {
         "GroupDescription": "Open database for access",
@@ -202,24 +202,18 @@
       }
     },
 
-    "myDBSubnetGroup": {
+    "DBSubnetGroup": {
       "Type": "AWS::RDS::DBSubnetGroup",
       "Properties": {
         "DBSubnetGroupDescription": "description",
-        "SubnetIds": { "Ref": "PrivSubnets" },
-        "Tags": [
-          {
-            "Key": "String",
-            "Value": "String"
-          }
-        ]
+        "SubnetIds": { "Ref": "PrivSubnets" }
       }
     },
 
     "OracleDB": {
       "Type": "AWS::RDS::DBInstance",
       "Properties": {
-        "DBName": { "Ref": "DBName" },
+        "DBName": "oracle-db",
         "DBInstanceIdentifier": "oracle-db",
         "Engine": "oracle-ee",
         "EngineVersion": "12.1.0.2.v7",
@@ -229,8 +223,8 @@
         "MultiAZ": { "Ref": "MultiAZDatabase" },
         "DBInstanceClass": { "Ref": "DBInstanceClass" },
         "AllocatedStorage": { "Ref": "DBAllocatedStorage" },
-        "DBSubnetGroupName": { "Ref": "myDBSubnetGroup" },
-        "VPCSecurityGroups": [ { "Fn::GetAtt": [ "DBEC2SecurityGroup", "GroupId" ] } ]
+        "DBSubnetGroupName": { "Ref": "DBSubnetGroup" },
+        "VPCSecurityGroups": [ { "Fn::GetAtt": [ "DBSecurityGroup", "GroupId" ] } ]
       }
     }
   }

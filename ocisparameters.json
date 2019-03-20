@@ -1,5 +1,5 @@
 {
-  "CloudFormationTemplateS3Endpoint": "https://bucket.s3.amazonaws.com/3-tier-cfn-ingest.json?AWSAccessKeyId=xxx",
+  "CloudFormationTemplateS3Endpoint": "https://s3-ap-southeast-2.amazonaws.com/remos3/ocis.json",
   "Description": "OCIS Application Stack - Contains 1 x Web/App server, 1 x Reporting Server, and a RDS database.",
   "Name": "OCIS Parameters",
   "Tags": [
