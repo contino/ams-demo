@@ -59,7 +59,7 @@
     "AppWebInstanceProfile": {
       "Description": "WebServer EC2 IAM instance profile (with read permission to AWS Secrets Manager)",
       "Type": "String",
-      "Default": "customer_origin_secrets_manager_instance_profile",
+      "Default": "secrets_manager_role",
       "AllowedPattern": "^[a-zA-Z0-9-_]*$",
       "ConstraintDescription": "Must be a valid pre-existing EC2 IAM role aka instance profile."
     },
@@ -74,7 +74,7 @@
     "ReportingInstanceProfile": {
       "Description": "Reporting Server EC2 IAM instance profile (with read permission to AWS Secrets Manager)",
       "Type": "String",
-      "Default": "customer_origin_secrets_manager_instance_profile",
+      "Default": "secrets_manager_role",
       "AllowedPattern": "^[a-zA-Z0-9-_]*$",
       "ConstraintDescription": "Must be a valid pre-existing EC2 IAM role aka instance profile."
     },
@@ -89,7 +89,7 @@
     "ImageID": {
       "Description": "Image ID that will be used for the servers",
       "Type": "String",
-      "Default": "ami-00f409158af899a3e",
+      "Default": "ami-0a95e6864096336b1",
       "ConstraintDescription": "Must be a valid Origin AMI."
     }
 
