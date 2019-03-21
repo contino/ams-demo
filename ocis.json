@@ -145,7 +145,7 @@
         "ImageId": { "Ref": "ImageID" },
         "IamInstanceProfile": { "Ref": "AppWebInstanceProfile" },
         "InstanceType": { "Ref": "AppWebInstanceType" },
-        "SecurityGroups" : { "Ref": "EC2ServersSecurityGroup" },
+        "SecurityGroup" : { "Ref": "EC2ServersSecurityGroup" },
         "SubnetId": { "Ref": "PrivSubnet" }
       }
     },
@@ -176,7 +176,7 @@
         "ImageId": { "Ref": "ImageID" },
         "IamInstanceProfile": { "Ref": "ReportingInstanceProfile" },
         "InstanceType": { "Ref": "ReportingInstanceType" },
-        "SecurityGroups" : { "Ref": "EC2ServersSecurityGroup" },
+        "SecurityGroup" : { "Ref": "EC2ServersSecurityGroup" },
         "SubnetId": { "Ref": "PrivSubnet" }
       }
     },

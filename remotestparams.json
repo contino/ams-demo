@@ -40,6 +40,14 @@
     {
       "Name": "ImageID",
       "Value": "ami-0a95e6864096336b1"
+    },
+    {
+      "Name": "ReportingInstanceProfile",
+      "Value": "secrets_manager_role"
+    },
+    {
+      "Name": "AppWebInstanceProfile",
+      "Value": "secrets_manager_role"
     }
   ]
 }
