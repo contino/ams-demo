@@ -10,17 +10,14 @@ You can use a federated login via `docker run --rm -it -v ~/.aws:/root/.aws dtjo
 
 ## Development Container
 
+
 **Start your container:**
 
-`docker run --rm -it -v ~/.aws:/root/.aws -v $(pwd):/opt/app contino/aws-cli bash`
+Create your own container for local development: `docker build . -t docker build . -t origin-aws-ansible`.
 
-When you're in the container, install Ansible (we will include that in the future to save time):
+Run your container: `docker run --rm -it -v ~/.aws:/root/.aws -v $(pwd):/opt/app origin-aws-ansible bash`
 
-`apk add ansible` 
-
-Then run Ansible:
-
-`ansible-playbook ocis-playbook.yml --extra-vars env=nonprod`
+Run Ansible in your container: `ansible-playbook ocis-playbook.yml --extra-vars env=nonprod`
 
 ## Using Ansible
 

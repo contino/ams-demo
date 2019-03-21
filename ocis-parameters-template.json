@@ -30,6 +30,10 @@
       "Value": "{{ VpcId }}"
     },
     {
+      "Name": "PrivSubnet",
+      "Value": "{{ PrivSubnet }}"
+    },
+    {
       "Name": "PrivSubnets",
       "Value": "{{ PrivSubnets }}"
     }

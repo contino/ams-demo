@@ -9,10 +9,6 @@
     tags:
       - vars
 
-  - name: install AMS CLI
-    shell: |
-      cd ./lib/ams && ./AWSManagedServices_InstallCLI.sh && cd ../../
-
   - name: create bucket to store templates
     shell: |
       aws s3 mb s3://{{ s3_bucket }} --profile {{ aws_profile }}
@@ -22,7 +18,7 @@
 
   - name: validate template locally
     shell: |
-      aws cloudformation validate-template --template-body file://ocis.json
+      aws cloudformation validate-template --template-body file://ocis-cf-template.json
     tags:
       - validate
 
@@ -32,7 +28,7 @@
       state: present
       region: ap-southeast-2
       disable_rollback: fasle
-      template: https://ocis.json
+      template: https://ocis-cf-template.json
       template_parameters:
         VpcId: vpc-78e76e1f
         PrivSubnets: "subnet-5b047812,subnet-c4d192a"
@@ -51,7 +47,7 @@
     shell: |
       aws cloudformation create-stack \
       --stack-name ocis-test-stack \
-      --template-body file://ocis.json \
+      --template-body file://ocis-cf-template.json \
       --parameters ParameterKey=VpcId,ParameterValue=vpc-78e76e1f ParameterKey=PrivSubnets,ParameterValue=subnet-5b047812\\,subnet-c4d192a ParameterKey=PrivSubnet,ParameterValue=subnet-5b047812 \
       --tags Key=Application,Value=OCISTEST Key=Owner,Value=ContinoGreenTeam Key=Contact,Value=andrew.khoury@origin.com.au Key=Project,Value=CloudMigration Key=Environment,Value=NonProd \
       --profile {{ aws_profile }}
@@ -60,20 +56,20 @@
       
   - name: Upload template to s3
     shell: |
-      aws s3 cp ocis.json s3://{{ s3_bucket }}/ocis.json --profile {{ aws_profile }}
+      aws s3 cp ocis-cf-template.json s3://{{ s3_bucket }}/ocis-cf-template.json --profile {{ aws_profile }}
     tags:
       - ams
 
   - name: Generate pre-signed file
     shell: |
-      aws s3 presign --expires-in 86400 s3://{{ s3_bucket }}/ocis.json
+      aws s3 presign --expires-in 86400 s3://{{ s3_bucket }}/ocis-cf-template.json
     register: cf_templated_presign    
     tags:
       - ams
 
   - name: generate ocis params file
     template:
-      src: ocisparameters-template.json
+      src: ocisp-arameters-template.json
       dest: ocis-params-GENERATED.json
     tags:
       - ams
