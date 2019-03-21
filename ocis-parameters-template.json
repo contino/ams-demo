@@ -36,6 +36,10 @@
     {
       "Name": "PrivSubnets",
       "Value": "{{ PrivSubnets }}"
+    },
+    {
+      "Name": "ImageId",
+      "Value": "{{ ImageId }}"
     }
   ]
 }

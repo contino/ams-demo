@@ -76,7 +76,7 @@
       "ConstraintDescription": "Must be a valid EC2 instance type."
     },
 
-    "ImageID": {
+    "ImageId": {
       "Description": "Image ID that will be used for the servers",
       "Type": "String",
       "Default": "ami-00f409158af899a3e",
@@ -110,7 +110,7 @@
               }
            }
         ],
-        "ImageId": { "Ref": "ImageID" },
+        "ImageId": { "Ref": "ImageId" },
         "IamInstanceProfile": { "Ref": "AppWebInstanceProfile" },
         "InstanceType": { "Ref": "AppWebInstanceType" },
         "SecurityGroupIds" : [ { "Ref": "EC2ServersSecurityGroup" } ],
@@ -118,6 +118,22 @@
       }
     },
 
+    "AppWebEC2InstanceRecoveryTestAlarm": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Properties": {
+        "AlarmDescription": "Trigger a recovery when instance status check fails for 15 consecutive minutes.",
+        "Namespace": "AWS/EC2" ,
+        "MetricName": "StatusCheckFailed_System",
+        "Statistic": "Minimum",
+        "Period": "60",
+        "EvaluationPeriods": "15",
+        "ComparisonOperator": "GreaterThanThreshold",
+        "Threshold": "0",
+        "AlarmActions": [ {"Fn::Join" : ["", ["arn:aws:automate:", { "Ref" : "AWS::Region" }, ":ec2:recover" ]]} ],
+        "Dimensions": [{"Name": "InstanceId","Value": {"Ref": "AppWebEC2Instance"}}]
+      }
+    },    
+    
     "ReportingEC2Instance": {
       "Type": "AWS::EC2::Instance",
       "Properties": {
@@ -141,7 +157,7 @@
               }
            }
         ],
-        "ImageId": { "Ref": "ImageID" },
+        "ImageId": { "Ref": "ImageId" },
         "IamInstanceProfile": { "Ref": "ReportingInstanceProfile" },
         "InstanceType": { "Ref": "ReportingInstanceType" },
         "SecurityGroupIds" : [ { "Ref": "EC2ServersSecurityGroup" } ],
@@ -149,7 +165,23 @@
       }
     },
 
-      "EC2ServersSecurityGroup": {
+    "ReportingEC2InstanceRecoveryTestAlarm": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Properties": {
+        "AlarmDescription": "Trigger a recovery when instance status check fails for 15 consecutive minutes.",
+        "Namespace": "AWS/EC2" ,
+        "MetricName": "StatusCheckFailed_System",
+        "Statistic": "Minimum",
+        "Period": "60",
+        "EvaluationPeriods": "15",
+        "ComparisonOperator": "GreaterThanThreshold",
+        "Threshold": "0",
+        "AlarmActions": [ {"Fn::Join" : ["", ["arn:aws:automate:", { "Ref" : "AWS::Region" }, ":ec2:recover" ]]} ],
+        "Dimensions": [{"Name": "InstanceId","Value": {"Ref": "ReportingEC2Instance"}}]
+      }
+    },    
+
+    "EC2ServersSecurityGroup": {
       "Type": "AWS::EC2::SecurityGroup",
       "Properties": {
         "GroupDescription": "Enable HTTP access via port 80",
