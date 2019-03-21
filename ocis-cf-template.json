@@ -11,7 +11,7 @@
     },
 
     "PrivSubnet": {
-      "Type": "List<AWS::EC2::Subnet::Id>",
+      "Type": "AWS::EC2::Subnet::Id",
       "Description": "The string of the Private SubnetId in your Virtual Private Cloud (VPC)",
       "ConstraintDescription": "Subnet Id"
     },
@@ -22,18 +22,8 @@
       "ConstraintDescription": "must be a list of at least two existing subnets associated with at least two different availability zones. They should be residing in the selected Virtual Private Cloud."
     },
 
-    "DBName": {
-      "Default": "OracleDB",
-      "Description": "Oracle database name",
-      "Type": "String",
-      "MinLength": "1",
-      "MaxLength": "64",
-      "AllowedPattern": "[a-zA-Z][a-zA-Z0-9]*",
-      "ConstraintDescription": "must begin with a letter and contain only alphanumeric characters."
-    },
-
     "DBAllocatedStorage": {
-      "Default": "5",
+      "Default": "500",
       "Description": "The size of the database (Gb)",
       "Type": "Number",
       "MinValue": "5",
@@ -44,7 +34,7 @@
     "DBInstanceClass": {
       "Description": "The database instance type",
       "Type": "String",
-      "Default": "db.r5.large",
+      "Default": "db.m4.large",
       "ConstraintDescription": "must select a valid database instance type."
     },
 
@@ -208,9 +198,8 @@
     "OracleDB": {
       "Type": "AWS::RDS::DBInstance",
       "Properties": {
-        "DBName": "oracle-db-test",
-        "Engine": "oracle-ee",
-        "EngineVersion": "12.1.0.2.v7",
+        "Engine": "oracle-se2",
+        "EngineVersion": "12.2.0.1.ru-2019-01.rur-2019-01.r1",
         "LicenseModel": "bring-your-own-license",
         "MasterUsername": "{{resolve:secretsmanager:ams-shared/stage-otdb-new:SecretString:Username}}",
         "MasterUserPassword": "{{resolve:secretsmanager:ams-shared/stage-otdb-new:SecretString:Password}}",
