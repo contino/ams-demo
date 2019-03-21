@@ -62,14 +62,14 @@
 
   - name: Generate pre-signed file
     shell: |
-      aws s3 presign --expires-in 86400 s3://{{ s3_bucket }}/ocis-cf-template.json
+      aws s3 presign --expires-in 3600 s3://{{ s3_bucket }}/ocis-cf-template.json --profile {{ aws_profile }}
     register: cf_templated_presign    
     tags:
       - ams
 
   - name: generate ocis params file
     template:
-      src: ocisp-arameters-template.json
+      src: ocis-parameters-template.json
       dest: ocis-params-GENERATED.json
     tags:
       - ams
