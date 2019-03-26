@@ -114,7 +114,17 @@
         "IamInstanceProfile": { "Ref": "AppWebInstanceProfile" },
         "InstanceType": { "Ref": "AppWebInstanceType" },
         "SecurityGroupIds" : [ { "Ref": "EC2ServersSecurityGroup" } ],
-        "SubnetId": { "Ref": "PrivSubnet" }
+        "SubnetId": { "Ref": "PrivSubnet" },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "App/Web Server"
+          },
+          {
+            "Key": "Type",
+            "Value": "Pet"
+          }
+        ]        
       }
     },
 
@@ -161,7 +171,17 @@
         "IamInstanceProfile": { "Ref": "ReportingInstanceProfile" },
         "InstanceType": { "Ref": "ReportingInstanceType" },
         "SecurityGroupIds" : [ { "Ref": "EC2ServersSecurityGroup" } ],
-        "SubnetId": { "Ref": "PrivSubnet" }
+        "SubnetId": { "Ref": "PrivSubnet" },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "Reporting Server"
+          },
+          {
+            "Key": "Type",
+            "Value": "Pet"
+          }
+        ]
       }
     },
 
@@ -242,5 +262,26 @@
         "VPCSecurityGroups": [ { "Fn::GetAtt": [ "DBSecurityGroup", "GroupId" ] } ]
       }
     }
+  },
+
+
+  "Outputs": {
+
+    "AppWebEC2InstancePrivateIP": {
+      "Description": "Private IP address of the new newly created instance.",
+      "Value": { "Fn::GetAtt": [ "AppWebEC2Instance", "PrivateDnsName" ] }
+    },
+
+    "ReportingEC2InstancePrivateIP": {
+      "Description": "Private IP address of the new newly created instance.",
+      "Value": { "Fn::GetAtt": [ "ReportingEC2Instance", "PrivateDnsName" ] }
+    },
+
+    "RDSEndpoint": {
+      "Description": "Private IP address of the new newly created instance.",
+      "Value": { "Fn::GetAtt": [ "OracleDB", "Endpoint.Address" ] }
+    }
+
   }
+  
 }

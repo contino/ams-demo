@@ -1,0 +1,7 @@
+{
+  "Comment": "Please update the CFN stack with the following updated CFN template: {{ cf_templated_presign_params_generated.stdout }}",
+  "Priority": "Low",
+  "RelatedIds": [
+    "{{ stack_id.user_input }}"
+  ]
+}

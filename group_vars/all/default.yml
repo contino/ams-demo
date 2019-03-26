@@ -4,14 +4,10 @@ s3_bucket:   contino-green-team
 Description: OCIS Application Stack - Contains 1 x Web/App server, 1 x Reporting Server, and a RDS database.
 Name:        OCIS Parameters
 
-Application: 3 Tier Test App
-Owner:       First Last
-Contact:     first.last@origin.com.au
-Project:     AMS Testing
-
-IAMEC2InstanceProfile: xxx
-MultiAZDatabase:       xxx
-WebServerCapacity:     1
+Application: OCIS
+Owner:       Colin Beames
+Contact:     Colin.Beames@origin.com.au
+Project:     OCIS
 
 username: lastf
 stack_id: stack-xxx

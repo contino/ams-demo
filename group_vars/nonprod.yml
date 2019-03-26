@@ -1,6 +1,6 @@
-PrivSubnet: subnet-5b047812
+PrivSubnet:  subnet-5b047812
 PrivSubnets: subnet-5b047812,subnet-c4d192a3
 VpcId:       vpc-78e76e1f
-ImageId:    ami-0c32b89ed33492178 # customer-ams-win2012-2018.11-1 - 2018-11-15
+ImageId:     ami-0c32b89ed33492178 # customer-ams-win2012-2018.11-1 - 2018-11-15
 
-ams_vpc: vpc-78e76e1f
+ams_vpc:     vpc-78e76e1f

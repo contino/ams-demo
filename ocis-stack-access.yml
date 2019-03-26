@@ -1,0 +1,105 @@
+---
+- hosts: localhost
+  tasks:
+
+  - name: load env specific vars
+    include_vars:
+      dir: group_vars
+      files_matching: "{{ env }}.yml"
+    tags:
+      - vars
+
+  - name: Get list of stacks
+    shell: |
+      aws cloudformation list-stacks --stack-status-filter CREATE_COMPLETE --query "StackSummaries[*].{StackName:StackName, TemplateDescription:TemplateDescription}" --output table
+    register: cf_stacks
+
+  - name: Show list of stacks
+    debug:
+      msg: "{{ cf_stacks.stdout_lines }}"
+
+  - name: What stack do you want access to?
+    pause:
+      prompt: "Stack Id?"
+    register: stack_id 
+
+  - name: generate exec-params_stack-access.json
+    template:
+      src: templates/exec-params_stack-access.json
+      dest: outputs/exec-params_stack-access.json
+
+  - name: create RFC
+    shell: |
+      aws amscm create-rfc \
+      --change-type-id ct-1dmlg9g1l91h6 --change-type-version "1.0" \
+      --title "Request for Access" \
+      --execution-parameters "file://outputs/exec-params_stack-access.json" --region us-east-1
+    register: rcf_id
+    tags:
+      - rfc
+
+  - name: submit RFC
+    shell: |
+      aws amscm submit-rfc --rfc-id {{ (rcf_id.stdout | from_json).RfcId }} --region us-east-1
+    tags:
+      - rfc
+
+  - name: check RFC
+    shell: |
+      aws amscm get-rfc --rfc-id {{ (rcf_id.stdout | from_json).RfcId }} --query "Rfc.{Status:Status.Name,Exec:ExecutionOutput}" --region us-east-1
+    retries: 120
+    delay: 5
+    register: result
+    until: (result.stdout | from_json).Status == "Success"
+    tags:
+      - rfc
+
+  - name: Get RFC Output
+    shell: |
+      aws amscm get-rfc --rfc-id {{ (rcf_id.stdout | from_json).RfcId }} --query "Rfc.{Exec:ExecutionOutput}" --region us-east-1
+    register: view_rfc
+    tags:
+      - rfc
+
+  - name: Show RFC Output
+    debug:
+      msg: "{{ (view_rfc.stdout | from_json).Exec }}"
+    tags:
+      - rfc
+
+  - name: Check that RDP to bastion host is assessable
+    wait_for:
+      host: rdpbastion1.A025049277119.amazonaws.com
+      port: "3389"
+      state: started         # Port should be open
+      delay: 0               # No wait before first check (sec)
+      timeout: 3             # Stop checking after timeout (sec)
+    ignore_errors: yes
+
+  - name: RDP Guide
+    debug:
+      msg:
+        - "1. ======================================================================================="
+        - "Now that you've requested access the bastion host, RDP into it using your AD credentials:"
+        - "rdesktop -d OCN -u lasatnamef -fP rdpbastionx.Axxx.amazonaws.com"
+        - ""
+        - "Choose one of the RDP hosts from this list:"
+        - ""
+        - "# RDP Hosts :: NonProd ----------------"
+        - "---------------------------------------"
+        - "rdpbastion1.A025049277119.amazonaws.com"
+        - "rdpbastion2.A025049277119.amazonaws.com"
+        - "rdpbastion3.A025049277119.amazonaws.com"
+        - "rdpbastion4.A025049277119.amazonaws.com"
+        - ""
+        - "# RDP Hosts :: Prod -------------------"
+        - "---------------------------------------"
+        - "rdpbastion1.A449159183592.amazonaws.com"
+        - "rdpbastion2.A449159183592.amazonaws.com"
+        - "rdpbastion3.A449159183592.amazonaws.com"
+        - "rdpbastion4.A449159183592.amazonaws.com"
+        - ""
+        - "2. ======================================================================================="
+        - "Once logged into the bastion, find the IP Address of the EC2 Instance, and RDP into it with your same AD credentials (domain=OCN username=lastnamef)."
+    tags:
+      - rdphelp

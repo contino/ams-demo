@@ -9,6 +9,22 @@
     tags:
       - vars
 
+  # STACK ID START
+  - name: Get list of stacks
+    shell: |
+      aws cloudformation list-stacks --stack-status-filter CREATE_COMPLETE --query "StackSummaries[*].{StackName:StackName, TemplateDescription:TemplateDescription}" --output table
+    register: cf_stacks
+
+  - name: Show list of stacks
+    debug:
+      msg: "{{ cf_stacks.stdout_lines }}"
+
+  - name: What stack do you want access to?
+    pause:
+      prompt: "Stack Id?"
+    register: stack_id 
+  # STACK ID END
+
   - name: create bucket to store templates
     shell: |
       aws s3 mb s3://{{ s3_bucket }} --profile {{ aws_profile }}
@@ -18,7 +34,7 @@
 
   - name: validate template locally
     shell: |
-      aws cloudformation validate-template --template-body file://ocis-cf-template.json
+      aws cloudformation validate-template --template-body file://templates/ocis-cf.json
     tags:
       - validate
 
@@ -28,7 +44,7 @@
       state: present
       region: ap-southeast-2
       disable_rollback: fasle
-      template: https://ocis-cf-template.json
+      template: https://templates/ocis-cf.json
       template_parameters:
         VpcId: vpc-78e76e1f
         PrivSubnets: "subnet-5b047812,subnet-c4d192a"
@@ -47,39 +63,59 @@
     shell: |
       aws cloudformation create-stack \
       --stack-name ocis-test-stack \
-      --template-body file://ocis-cf-template.json \
+      --template-body file://templates/ocis-cf.json \
       --parameters ParameterKey=VpcId,ParameterValue=vpc-78e76e1f ParameterKey=PrivSubnets,ParameterValue=subnet-5b047812\\,subnet-c4d192a ParameterKey=PrivSubnet,ParameterValue=subnet-5b047812 \
       --tags Key=Application,Value=OCISTEST Key=Owner,Value=ContinoGreenTeam Key=Contact,Value=andrew.khoury@origin.com.au Key=Project,Value=CloudMigration Key=Environment,Value=NonProd \
       --profile {{ aws_profile }}
     tags:
       - cf
       
-  - name: Upload template to s3
+  - name: Upload ocis-cf.json template to s3
     shell: |
-      aws s3 cp ocis-cf-template.json s3://{{ s3_bucket }}/ocis-cf-template.json --profile {{ aws_profile }}
+      aws s3 cp templates/ocis-cf.json s3://{{ s3_bucket }}/ocis-cf.json --profile {{ aws_profile }}
     tags:
       - ams
 
-  - name: Generate pre-signed file
+  - name: Generate pre-signed url for ocis-cf.json
     shell: |
-      aws s3 presign --expires-in 3600 s3://{{ s3_bucket }}/ocis-cf-template.json --profile {{ aws_profile }}
+      aws s3 presign --expires-in 3600 s3://{{ s3_bucket }}/ocis-cf.json --profile {{ aws_profile }}
     register: cf_templated_presign    
     tags:
       - ams
 
-  - name: generate ocis params file
+  - name: generate exec-params_cfn-create.json
     template:
-      src: ocis-parameters-template.json
-      dest: ocis-params-GENERATED.json
+      src: templates/exec-params_cfn-create.json
+      dest: outputs/exec-params_cfn-create.json
+    tags:
+      - ams
+
+  - name: Upload exec-params_cfn-create.json to s3
+    shell: |
+      aws s3 cp outputs/exec-params_cfn-create.json s3://{{ s3_bucket }}/exec-params_cfn-create.json --profile {{ aws_profile }}
+    tags:
+      - ams
+
+  - name: Generate pre-signed file for exec-params_cfn-create.json
+    shell: |
+      aws s3 presign --expires-in 3600 s3://{{ s3_bucket }}/exec-params_cfn-create.json --profile {{ aws_profile }}
+    register: cf_templated_presign_params_generated    
+    tags:
+      - ams
+
+  - name: generate exec-params_cfn-update.json
+    template:
+      src: templates/exec-params_cfn-update.json
+      dest: outputs/exec-params_cfn-update.json
     tags:
       - ams
       
-  - name: create RFC
+  - name: update RFC
     shell: |
       aws amscm create-rfc \
-      --change-type-id ct-36cn2avfrrj9v --change-type-version "1.0" \
-      --title "TEST ONLY - IGNORE - Contino test cfn ingest v2" \
-      --execution-parameters "file://ocis-params-GENERATED.json" --region us-east-1
+      --change-type-id ct-0xdawir96cy7k --change-type-version "1.0" \
+      --title "TEST - Contino test cfn MANUAL UPDATE REQUEST - {{ env }}" \
+      --execution-parameters "file://outputs/exec-params_cfn-update.json" --region us-east-1
     register: rcf_id
     tags:
       - ams
