@@ -8,6 +8,7 @@
       files_matching: "{{ env }}.yml"
     tags:
       - vars
+      - always
 
   - name: create bucket to store templates
     shell: |
@@ -78,7 +79,7 @@
     shell: |
       aws amscm create-rfc \
       --change-type-id ct-36cn2avfrrj9v --change-type-version "1.0" \
-      --title "TEST ONLY - IGNORE - Contino test cfn ingest v2 - {{ env }}" \
+      --title "OCIS Env - {{ env }}" \
       --execution-parameters "file://outputs/exec-params_cfn-create.json" --region us-east-1
     register: rcf_id
     tags:

@@ -26,7 +26,7 @@
 
 Make sure your `~/.aws` configuration includes the appropriate profile name & region (for AMS and for AWS).
 
-Windows users should replace `~/.aws` with the full path to thier aws config folder, e.g `C:\Users\userx\.aws`.
+Windows users should replace `~/.aws` with the full path to their aws config folder, e.g `C:\Users\userx\.aws`.
 
 Windows users should also replace `$(pwd)` with the current directory for this repo e.g `C:\Users\userx\repos\this-repo`
 

@@ -34,7 +34,7 @@
     "DBInstanceClass": {
       "Description": "The database instance type",
       "Type": "String",
-      "Default": "db.m4.large",
+      "Default": "db.m5.xlarge",
       "ConstraintDescription": "must select a valid database instance type."
     },
 
@@ -123,6 +123,10 @@
           {
             "Key": "Type",
             "Value": "Pet"
+          },
+          {
+            "Key": "Backup",
+            "Value": "True"
           }
         ]        
       }
@@ -180,6 +184,10 @@
           {
             "Key": "Type",
             "Value": "Pet"
+          },
+          {
+            "Key": "Backup",
+            "Value": "True"
           }
         ]
       }
@@ -252,7 +260,7 @@
       "Properties": {
         "Engine": "oracle-se2",
         "EngineVersion": "12.2.0.1.ru-2019-01.rur-2019-01.r1",
-        "LicenseModel": "bring-your-own-license",
+        "LicenseModel": "license-included",
         "MasterUsername": "{{resolve:secretsmanager:ams-shared/stage-otdb-new:SecretString:Username}}",
         "MasterUserPassword": "{{resolve:secretsmanager:ams-shared/stage-otdb-new:SecretString:Password}}",
         "MultiAZ": { "Ref": "MultiAZDatabase" },

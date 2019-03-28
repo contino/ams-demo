@@ -8,6 +8,7 @@
       files_matching: "{{ env }}.yml"
     tags:
       - vars
+      - always
 
   # STACK ID START
   - name: Get list of stacks
@@ -78,7 +79,7 @@
 
   - name: Generate pre-signed url for ocis-cf.json
     shell: |
-      aws s3 presign --expires-in 3600 s3://{{ s3_bucket }}/ocis-cf.json --profile {{ aws_profile }}
+      aws s3 presign --expires-in 86400 s3://{{ s3_bucket }}/ocis-cf.json --profile {{ aws_profile }}
     register: cf_templated_presign    
     tags:
       - ams
@@ -98,7 +99,7 @@
 
   - name: Generate pre-signed file for exec-params_cfn-create.json
     shell: |
-      aws s3 presign --expires-in 3600 s3://{{ s3_bucket }}/exec-params_cfn-create.json --profile {{ aws_profile }}
+      aws s3 presign --expires-in 86400 s3://{{ s3_bucket }}/exec-params_cfn-create.json --profile {{ aws_profile }}
     register: cf_templated_presign_params_generated    
     tags:
       - ams
@@ -110,11 +111,11 @@
     tags:
       - ams
       
-  - name: update RFC
+  - name: create RFC (MNGT/Other/Other - CF Update)
     shell: |
       aws amscm create-rfc \
       --change-type-id ct-0xdawir96cy7k --change-type-version "1.0" \
-      --title "TEST - Contino test cfn MANUAL UPDATE REQUEST - {{ env }}" \
+      --title "OCIS Env - {{ env }} (CF Update)" \
       --execution-parameters "file://outputs/exec-params_cfn-update.json" --region us-east-1
     register: rcf_id
     tags:
