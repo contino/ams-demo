@@ -1,5 +1,5 @@
 {
-  "CloudFormationTemplateS3Endpoint": "{{ cf_templated_presign.stdout }}",
+  "CloudFormationTemplateS3Endpoint": "{{ cf_template_url }}",
   "Description": "{{ Description }}",
   "Name": "{{ Name }}",
   "Tags": [
@@ -22,6 +22,10 @@
     {
       "Key": "Environment",
       "Value": "{{ env }}"
+    },
+    {
+      "Key": "Epoch",
+      "Value": "{{ epoch }}"
     }
   ],
   "Parameters": [
@@ -38,8 +42,45 @@
       "Value": "{{ PrivSubnets }}"
     },
     {
-      "Name": "ImageId",
-      "Value": "{{ ImageId }}"
+      "Name": "DBAllocatedStorage",
+      "Value": "{{ DBAllocatedStorage }}"
+    },
+    {
+      "Name": "DBInstanceClass",
+      "Value": "{{ DBInstanceClass }}"
+    },
+    {
+      "Name": "MultiAZDatabase",
+      "Value": "{{ MultiAZDatabase }}"
+    },
+    {
+      "Name": "AppWebInstanceProfile",
+      "Value": "{{ AppWebInstanceProfile }}"
+    },
+    {
+      "Name": "AppWebInstanceType",
+      "Value": "{{ AppWebInstanceType }}"
+    },
+    {
+      "Name": "AppWebImageId",
+      "Value": "{{ AppWebImageId }}"
+    },
+    {
+      "Name": "SecretLocation",
+      "Value": "{{ SecretLocation }}"
+    },
+    {
+      "Name": "Environment",
+      "Value": "{{ env }}"
+    },
+    {
+      "Name": "ManagementSG",
+      "Value": "{{ ManagementSG }}"
+    },
+    {
+      "Name": "Epoch",
+      "Value": "{{ epoch }}"
     }
+    
   ]
 }

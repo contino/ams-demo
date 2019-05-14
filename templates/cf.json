@@ -1,7 +1,7 @@
 {
   "AWSTemplateFormatVersion": "2010-09-09",
 
-  "Description": "OCIS Application Stack - Contains 1 x Web/App server, 1 x Reporting Server, and a RDS database.",
+  "Description": "{{ Description }}",
 
   "Parameters": {
     "VpcId": {
@@ -23,12 +23,12 @@
     },
 
     "DBAllocatedStorage": {
-      "Default": "500",
+      "Default": "700",
       "Description": "The size of the database (Gb)",
       "Type": "Number",
-      "MinValue": "5",
+      "MinValue": "50",
       "MaxValue": "1024",
-      "ConstraintDescription": "must be between 5 and 1024Gb."
+      "ConstraintDescription": "must be between 600 and 3072Gb."
     },
 
     "DBInstanceClass": {
@@ -49,7 +49,7 @@
     "AppWebInstanceProfile": {
       "Description": "WebServer EC2 IAM instance profile (with read permission to AWS Secrets Manager)",
       "Type": "String",
-      "Default": "customer_origin_secrets_manager_instance_profile",
+      "Default": "my_instance_profile",
       "AllowedPattern": "^[a-zA-Z0-9-_]*$",
       "ConstraintDescription": "Must be a valid pre-existing EC2 IAM role aka instance profile."
     },
@@ -61,28 +61,57 @@
       "ConstraintDescription": "must be a valid EC2 instance type."
     },
 
-    "ReportingInstanceProfile": {
-      "Description": "Reporting Server EC2 IAM instance profile (with read permission to AWS Secrets Manager)",
-      "Type": "String",
-      "Default": "customer_origin_secrets_manager_instance_profile",
-      "AllowedPattern": "^[a-zA-Z0-9-_]*$",
-      "ConstraintDescription": "Must be a valid pre-existing EC2 IAM role aka instance profile."
-    },
-
-    "ReportingInstanceType": {
-      "Description": "Reporting Server EC2 instance type",
-      "Type": "String",
-      "Default": "t3.xlarge",
-      "ConstraintDescription": "Must be a valid EC2 instance type."
-    },
-
-    "ImageId": {
+    "AppWebImageId": {
       "Description": "Image ID that will be used for the servers",
       "Type": "String",
-      "Default": "ami-00f409158af899a3e",
-      "ConstraintDescription": "Must be a valid Origin AMI."
-    }
+      "Default": "ami-xxx",
+      "ConstraintDescription": "Must be a valid AMI."
+    },
+    
+    "Environment": {
+      "Description": "Environment Name",
+      "Type": "String",
+      "Default": "nonprod",
+      "ConstraintDescription": "Environment Name, either dev,test,nonprod,prod",
+      "AllowedValues": [ "dev","nonprod", "prod", "test" ]
+    },
 
+    "Epoch": {
+      "Description": "Epoch (seconds since epoch) to provide a unique value",
+      "Type": "String",
+      "Default": "xxx"
+    },
+
+    "AppWebRootVolumeSize": {
+      "Description": "The size of the root disk (Gb)",
+      "Type": "Number",
+      "Default": "100"
+    },
+
+    "AppWebDataVolume1Size": {
+      "Description": "The size of data disk 1 (Gb)",
+      "Type": "Number",
+      "Default": "50"
+    },
+
+    "AppWebDataVolume2Size": {
+      "Description": "The size of data disk 2 (Gb)",
+      "Type": "Number",
+      "Default": "50"
+    },
+
+    "ManagementSG": {
+      "Description": "SG of Management box",
+      "Type": "String",
+      "Default": "sg-xxx"
+    },
+
+    "SecretLocation": {
+      "Description": "Secret location",
+      "Type": "String",
+      "Default": "secret"
+    }
+    
   },
 
   "Resources": {
@@ -94,23 +123,39 @@
            {
               "DeviceName": "/dev/sda1",
               "Ebs": {
-                "VolumeSize": "100"
+                "VolumeSize": { "Ref": "AppWebRootVolumeSize" },
+                "Encrypted": "True"
               }
            },
                       {
               "DeviceName": "xvdf",
               "Ebs": {
-                "VolumeSize": "50"
+                "VolumeSize": { "Ref": "AppWebDataVolume1Size" },
+                "Encrypted": "True"
               }
            },
                       {
               "DeviceName": "xvdg",
               "Ebs": {
-                "VolumeSize": "50"
+                "VolumeSize": { "Ref": "AppWebDataVolume2Size" },
+                "Encrypted": "True"
               }
            }
         ],
-        "ImageId": { "Ref": "ImageId" },
+        "UserData": {
+          "Fn::Base64": {
+            "Fn::Join": [
+              "",
+              [
+                "<powershell>\n",
+                "Copy-S3Object -BucketName {{ s3_bucket }} -Key ec2-startup.ps1 -LocalFile c:\\ec2-startup.ps1\n",
+                "c:\\ec2-startup\n",
+                "</powershell>"
+              ]
+            ]
+          }
+        },
+        "ImageId": { "Ref": "AppWebImageId" },
         "IamInstanceProfile": { "Ref": "AppWebInstanceProfile" },
         "InstanceType": { "Ref": "AppWebInstanceType" },
         "SecurityGroupIds" : [ { "Ref": "EC2ServersSecurityGroup" } ],
@@ -118,11 +163,19 @@
         "Tags": [
           {
             "Key": "Name",
-            "Value": "App/Web Server"
+            "Value": {"Fn::Join" : ["", ["{{ app_name }} AppWeb ", { "Ref" : "Epoch" }, " (",{ "Ref" : "AWS::StackName" },")" ]]}
           },
           {
             "Key": "Type",
             "Value": "Pet"
+          },
+          {
+            "Key": "ServerName",
+            "Value": "appweb"
+          },
+          {
+            "Key": "Database",
+            "Value": { "Fn::GetAtt": [ "DBInstance", "Endpoint.Address" ] }
           },
           {
             "Key": "Backup",
@@ -132,7 +185,7 @@
       }
     },
 
-    "AppWebEC2InstanceRecoveryTestAlarm": {
+    "AppWebEC2InstanceRecoveryAlarm": {
       "Type": "AWS::CloudWatch::Alarm",
       "Properties": {
         "AlarmDescription": "Trigger a recovery when instance status check fails for 15 consecutive minutes.",
@@ -147,87 +200,26 @@
         "Dimensions": [{"Name": "InstanceId","Value": {"Ref": "AppWebEC2Instance"}}]
       }
     },    
-    
-    "ReportingEC2Instance": {
-      "Type": "AWS::EC2::Instance",
-      "Properties": {
-        "BlockDeviceMappings": [
-           {
-              "DeviceName": "/dev/sda1",
-              "Ebs": {
-                "VolumeSize": "100"
-              }
-           },
-                      {
-              "DeviceName": "xvdf",
-              "Ebs": {
-                "VolumeSize": "150"
-              }
-           },
-                      {
-              "DeviceName": "xvdg",
-              "Ebs": {
-                "VolumeSize": "50"
-              }
-           }
-        ],
-        "ImageId": { "Ref": "ImageId" },
-        "IamInstanceProfile": { "Ref": "ReportingInstanceProfile" },
-        "InstanceType": { "Ref": "ReportingInstanceType" },
-        "SecurityGroupIds" : [ { "Ref": "EC2ServersSecurityGroup" } ],
-        "SubnetId": { "Ref": "PrivSubnet" },
-        "Tags": [
-          {
-            "Key": "Name",
-            "Value": "Reporting Server"
-          },
-          {
-            "Key": "Type",
-            "Value": "Pet"
-          },
-          {
-            "Key": "Backup",
-            "Value": "True"
-          }
-        ]
-      }
-    },
-
-    "ReportingEC2InstanceRecoveryTestAlarm": {
-      "Type": "AWS::CloudWatch::Alarm",
-      "Properties": {
-        "AlarmDescription": "Trigger a recovery when instance status check fails for 15 consecutive minutes.",
-        "Namespace": "AWS/EC2" ,
-        "MetricName": "StatusCheckFailed_System",
-        "Statistic": "Minimum",
-        "Period": "60",
-        "EvaluationPeriods": "15",
-        "ComparisonOperator": "GreaterThanThreshold",
-        "Threshold": "0",
-        "AlarmActions": [ {"Fn::Join" : ["", ["arn:aws:automate:", { "Ref" : "AWS::Region" }, ":ec2:recover" ]]} ],
-        "Dimensions": [{"Name": "InstanceId","Value": {"Ref": "ReportingEC2Instance"}}]
-      }
-    },    
 
     "EC2ServersSecurityGroup": {
       "Type": "AWS::EC2::SecurityGroup",
       "Properties": {
-        "GroupDescription": "Enable HTTP access via port 80",
+        "GroupDescription": "Enable TCP access via port 16073",
         "SecurityGroupIngress": [
           {
             "IpProtocol": "tcp",
-            "FromPort": "80",
-            "ToPort": "80",
-            "CidrIp" : "10.0.0.0/16"
-          },
-          {
-            "IpProtocol": "tcp",
-            "FromPort": "443",
-            "ToPort": "443",
-            "CidrIp" : "10.0.0.0/16"
+            "FromPort": "16073",
+            "ToPort": "16073",
+            "CidrIp" : "10.0.0.0/8"
           }
         ],
-        "VpcId": { "Ref": "VpcId" }
+        "VpcId": { "Ref": "VpcId" },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": {"Fn::Join" : ["", ["{{ app_name }} SG for AppWeb ", { "Ref" : "Epoch" }, " (",{ "Ref" : "AWS::StackName" },")" ]]}
+          }
+        ]
       }
     },
     
@@ -238,10 +230,17 @@
         "SecurityGroupIngress": [
           {
             "IpProtocol": "tcp",
-            "FromPort": "1521",
-            "ToPort": "1521",
+            "FromPort": "1433",
+            "ToPort": "1433",
             "SourceSecurityGroupId": { "Ref": "EC2ServersSecurityGroup" }
+          },
+          {
+            "IpProtocol": "tcp",
+            "FromPort": "1433",
+            "ToPort": "1433",
+            "SourceSecurityGroupId": { "Ref": "ManagementSG" }
           }
+          
         ],
         "VpcId": { "Ref": "VpcId" }
       }
@@ -255,39 +254,44 @@
       }
     },
 
-    "OracleDB": {
+    "DBInstance": {
       "Type": "AWS::RDS::DBInstance",
       "Properties": {
-        "Engine": "oracle-se2",
-        "EngineVersion": "12.2.0.1.ru-2019-01.rur-2019-01.r1",
+        "Engine": "sqlserver-se",
+        "EngineVersion": "13.00.5216.0.v1",
         "LicenseModel": "license-included",
-        "MasterUsername": "{{resolve:secretsmanager:ams-shared/stage-otdb-new:SecretString:Username}}",
-        "MasterUserPassword": "{{resolve:secretsmanager:ams-shared/stage-otdb-new:SecretString:Password}}",
+        "StorageEncrypted": "True",
+        {% raw -%}
+        "MasterUsername":     {"Fn::Join": ["", ["{{resolve:secretsmanager:",{"Ref": "SecretLocation"},":SecretString:Username}}" ] ] },
+        "MasterUserPassword": {"Fn::Join": ["", ["{{resolve:secretsmanager:",{"Ref": "SecretLocation"},":SecretString:Password}}" ] ] },
+        {%- endraw %}
+
         "MultiAZ": { "Ref": "MultiAZDatabase" },
         "DBInstanceClass": { "Ref": "DBInstanceClass" },
         "AllocatedStorage": { "Ref": "DBAllocatedStorage" },
         "DBSubnetGroupName": { "Ref": "DBSubnetGroup" },
-        "VPCSecurityGroups": [ { "Fn::GetAtt": [ "DBSecurityGroup", "GroupId" ] } ]
+        "VPCSecurityGroups": [ { "Fn::GetAtt": [ "DBSecurityGroup", "GroupId" ] } ],
+        "DBInstanceIdentifier": {"Fn::Join" : ["-", ["{{ app_prefix }}-db", { "Ref" : "Epoch" },{ "Ref" : "AWS::StackName" } ]]}
       }
     }
-  },
 
+  },
 
   "Outputs": {
 
-    "AppWebEC2InstancePrivateIP": {
-      "Description": "Private IP address of the new newly created instance.",
+    "AppWebEC2InstancePrivateDnsName": {
+      "Description": "Private DNS Name for the Instance.",
       "Value": { "Fn::GetAtt": [ "AppWebEC2Instance", "PrivateDnsName" ] }
     },
 
-    "ReportingEC2InstancePrivateIP": {
-      "Description": "Private IP address of the new newly created instance.",
-      "Value": { "Fn::GetAtt": [ "ReportingEC2Instance", "PrivateDnsName" ] }
+    "AppWebEC2InstanceInstanceId": {
+      "Description": "Instance ID for the Instance.",
+      "Value": { "Ref" : "AppWebEC2Instance" }
     },
 
     "RDSEndpoint": {
-      "Description": "Private IP address of the new newly created instance.",
-      "Value": { "Fn::GetAtt": [ "OracleDB", "Endpoint.Address" ] }
+      "Description": "Endpoint address of the RDS Instance.",
+      "Value": { "Fn::GetAtt": [ "DBInstance", "Endpoint.Address" ] }
     }
 
   }

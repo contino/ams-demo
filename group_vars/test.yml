@@ -1,5 +1,5 @@
-ams_profile_string: "--profile {{ aws_profile_ams_p }}"
-env_postfix: ""
+ams_profile_string: "--profile {{ aws_profile_ams_np }}"
+env_postfix: "-np"
 
 # params for cf template
 ########################

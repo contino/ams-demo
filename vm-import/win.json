@@ -1,9 +1,0 @@
-[
-  {
-    "Description": "Windows Test",
-    "Format": "vhd",
-    "UserBucket": {
-        "S3Bucket": "cloud-migration-green-team",
-        "S3Key": "win.vhd"
-    }
-}]

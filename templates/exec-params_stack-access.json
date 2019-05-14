@@ -1,9 +1,9 @@
 {
-  "DomainFQDN": "ocn.origin.com.au",
+  "DomainFQDN": "{{ domain_fqdn }}",
   "StackIds": [
     "{{ stack_id.user_input }}"
   ],
   "TimeRequestedInHours": 8,
   "Username": "{{ username }}",
-  "VpcId": "{{ ams_vpc }}"
+  "VpcId": "{{ VpcId }}"
 }

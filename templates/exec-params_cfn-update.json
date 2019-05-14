@@ -1,5 +1,5 @@
 {
-  "Comment": "Please update the CFN stack with the following updated CFN template: {{ cf_templated_presign_params_generated.stdout }}",
+  "Comment": "Please run a CF update for {{ stack_id.user_input }} using the following updated data s3://{{ s3_bucket }}/exec-params_cfn-updatedrfc_{{ unique_key }}.json",
   "Priority": "Low",
   "RelatedIds": [
     "{{ stack_id.user_input }}"
