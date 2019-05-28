@@ -6,7 +6,7 @@ RUN apk add tzdata \
 
 # AMS Install
 COPY lib/ams /opt/app/lib/
-WORKDIR /opt/app/lib/ 
+WORKDIR /opt/app/lib
 RUN ./AWSManagedServices_InstallCLI.sh
 WORKDIR /opt/app
 
